@@ -3,12 +3,16 @@
 import Tech from '../../../src/js/tech/tech.js';
 
 /**
- * @constructor
+ * @class
  */
 class TechFaker extends Tech {
 
   constructor(options, handleReady) {
     super(options, handleReady);
+
+    if (this.options_ && this.options_.sourceset) {
+      this.fakeSourceset();
+    }
     if (!options || options.autoReady !== false) {
       this.triggerReady();
     }
@@ -28,6 +32,7 @@ class TechFaker extends Tech {
   }
   setPoster(val) {
     this.el().poster = val;
+    this.trigger('posterchange');
   }
 
   setControls(val) {}
@@ -36,13 +41,29 @@ class TechFaker extends Tech {
 
   setMuted() {}
 
+  setAutoplay(v) {
+    if (!v) {
+      this.options_.autoplay = false;
+    }
+
+    this.options_.autoplay = true;
+  }
+
   currentTime() {
     return 0;
   }
   seeking() {
     return false;
   }
-  src() {
+  fakeSourceset() {
+    this.el_.src = this.options_.sourceset;
+    this.el_.setAttribute('src', this.options_.sourceset);
+    super.triggerSourceset(this.options_.sourceset);
+  }
+  src(src) {
+    if (typeof src !== 'undefined' && this.options_ && this.options_.sourceset) {
+      this.fakeSourceset();
+    }
     return 'movie.mp4';
   }
   currentSrc() {
@@ -54,11 +75,17 @@ class TechFaker extends Tech {
   muted() {
     return false;
   }
+  autoplay() {
+    return this.options_.autoplay || false;
+  }
   pause() {
     return false;
   }
   paused() {
     return true;
+  }
+  loop() {
+    return false;
   }
   play() {
     this.trigger('play');

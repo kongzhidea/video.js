@@ -8,6 +8,7 @@ So you want to help out? Great! There's a number of ways you can get involved.
 * [Filing issues](#filing-issues)
   * [Reporting a Bug](#reporting-a-bug)
   * [Requesting a Feature](#requesting-a-feature)
+  * [Labels](#labels)
 * [Contributing code](#contributing-code)
   * [Building video.js locally](#building-videojs-locally)
     * [Forking and cloning the repository](#forking-and-cloning-the-repository)
@@ -58,7 +59,7 @@ Guidelines for bug reports:
 1. If your issue is with a particular video.js plugin or subproject, please open an issue against that project. See [list of some potential other projects above](#other-repositories-where-issues-could-be-filed)
 1. Use the [GitHub issue search](https://github.com/videojs/video.js/issues) — check if the issue has already been reported.
 1. Check if the issue has already been fixed — try to reproduce it using the latest `master` branch in the repository.
-1. Isolate the problem — **create a [reduced test case](https://css-tricks.com/reduced-test-cases/)** with a live example. You can possibly use [this JSBin example](http://jsbin.com/axedog/edit) as a starting point -- don't forget to update it to the videojs version you use.
+1. Isolate the problem — **create a [reduced test case](https://css-tricks.com/reduced-test-cases/)** with a live example. You can possibly use [this codepen template](https://codepen.io/gkatsev/pen/GwZegv?editors=1000#0) as a starting point -- don't forget to update it to the videojs version you use.
 1. Answer all questions in the [issue template][]. The questions in the issue template are designed to try and provide the maintainers with as much information possible to minimize back-and-forth to get the issue resolved.
 
 A good bug report should be as detailed as possible, so that others won't have to follow up for the essential details.
@@ -73,6 +74,21 @@ A good bug report should be as detailed as possible, so that others won't have t
 1. Once again, be as details as possible and follow the [issue template][]
 
 **[Request a feature](https://github.com/videojs/video.js/issues/new)**
+
+### Labels
+
+There are a few labels that might be added to your issue or PR by a maintainer. Here's a quick rundown of what they mean:
+
+| Label                    | Issue or PR  | Description                                                                                                                                              |
+| ------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| confirmed                | Issue and PR | Issue: marks as reproducible by a maintainer. PR: marked by a maintainer as ready to be merged                                                           |
+| 5.x                      | PR           | Marks as a change to the 5.x branch only                                                                                                                 |
+| bug                      | Issue        | Marks as a confirmed bug by a maintainer                                                                                                                 |
+| good first issue         | Issue        | Marked as a good bug or enhancement for first time contributors to Video.js                                                                              |
+| first-timers-only        | Issue        | Marked as a good bug or enhancement to be done by a newcomer to open source                                                                              |
+| minor, patch, major      | PR           | Marks PR with the expected [semver](https://semver.org/) classification of the change                                                                    |
+| needs: more info         | Issue        | Marked by a maintainer as needing more information from the issue reporter. Please update your issue with more information to help us reproduce the bug. |
+| needs: reduced test case | Issue        | Marked by a maintainer as needing a reduced test case from the issue reporter. Please create a test page that we can inspect to help us indentify a bug. |
 
 ## Contributing code
 

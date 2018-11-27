@@ -8,6 +8,7 @@ import * as Dom from '../utils/dom.js';
 import * as Fn from '../utils/fn.js';
 import * as Events from '../utils/events.js';
 import toTitleCase from '../utils/to-title-case.js';
+import { IS_IOS } from '../utils/browser.js';
 import document from 'global/document';
 
 /**
@@ -50,7 +51,9 @@ class MenuButton extends Component {
     this.on(this.menuButton_, 'click', this.handleClick);
     this.on(this.menuButton_, 'focus', this.handleFocus);
     this.on(this.menuButton_, 'blur', this.handleBlur);
-
+    this.on(this.menuButton_, 'mouseenter', () => {
+      this.menu.show();
+    });
     this.on('keydown', this.handleSubmenuKeyPress);
   }
 
@@ -61,6 +64,7 @@ class MenuButton extends Component {
     const menu = this.createMenu();
 
     if (this.menu) {
+      this.menu.dispose();
       this.removeChild(this.menu);
     }
 
@@ -219,14 +223,6 @@ class MenuButton extends Component {
    * @listens click
    */
   handleClick(event) {
-    // When you click the button it adds focus, which will show the menu.
-    // So we'll remove focus when the mouse leaves the button. Focus is needed
-    // for tab navigation.
-
-    this.one(this.menu.contentEl(), 'mouseleave', Fn.bind(this, function(e) {
-      this.unpressButton();
-      this.el_.blur();
-    }));
     if (this.buttonPressed_) {
       this.unpressButton();
     } else {
@@ -297,8 +293,8 @@ class MenuButton extends Component {
         // Set focus back to the menu button's button
         this.menuButton_.el_.focus();
       }
-    // Up (38) key or Down (40) key press the 'button'
-    } else if (event.which === 38 || event.which === 40) {
+    // Enter (13) or Up (38) key or Down (40) key press the 'button'
+    } else if (event.which === 13 || event.which === 38 || event.which === 40) {
       if (!this.buttonPressed_) {
         this.pressButton();
         event.preventDefault();
@@ -337,9 +333,17 @@ class MenuButton extends Component {
   pressButton() {
     if (this.enabled_) {
       this.buttonPressed_ = true;
+      this.menu.show();
       this.menu.lockShowing();
       this.menuButton_.el_.setAttribute('aria-expanded', 'true');
-      // set the focus into the submenu
+
+      // set the focus into the submenu, except on iOS where it is resulting in
+      // undesired scrolling behavior when the player is in an iframe
+      if (IS_IOS && Dom.isInFrame()) {
+        // Return early so that the menu isn't focused
+        return;
+      }
+
       this.menu.focus();
     }
   }
@@ -351,6 +355,7 @@ class MenuButton extends Component {
     if (this.enabled_) {
       this.buttonPressed_ = false;
       this.menu.unlockShowing();
+      this.menu.hide();
       this.menuButton_.el_.setAttribute('aria-expanded', 'false');
     }
   }

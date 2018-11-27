@@ -84,8 +84,11 @@ class Component {
       this.el_ = this.createEl();
     }
 
-    // Make this an evented object and use `el_`, if available, as its event bus
-    evented(this, {eventBusKey: this.el_ ? 'el_' : null});
+    // if evented is anything except false, we want to mixin in evented
+    if (options.evented !== false) {
+      // Make this an evented object and use `el_`, if available, as its event bus
+      evented(this, {eventBusKey: this.el_ ? 'el_' : null});
+    }
     stateful(this, this.constructor.defaultState);
 
     this.children_ = [];
@@ -148,6 +151,9 @@ class Component {
       DomData.removeData(this.el_);
       this.el_ = null;
     }
+
+    // remove reference to the player after disposing of the element
+    this.player_ = null;
   }
 
   /**
@@ -217,7 +223,7 @@ class Component {
    * Localize a string given the string in english.
    *
    * If tokens are provided, it'll try and run a simple token replacement on the provided string.
-   * The tokens it loooks for look like `{1}` with the index being 1-indexed into the tokens array.
+   * The tokens it looks for look like `{1}` with the index being 1-indexed into the tokens array.
    *
    * If a `defaultValue` is provided, it'll use that over `string`,
    * if a value isn't found in provided language files.
@@ -539,39 +545,39 @@ class Component {
       workingChildren
       // children that are in this.options_ but also in workingChildren  would
       // give us extra children we do not want. So, we want to filter them out.
-      .concat(Object.keys(this.options_)
-              .filter(function(child) {
-                return !workingChildren.some(function(wchild) {
-                  if (typeof wchild === 'string') {
-                    return child === wchild;
-                  }
-                  return child === wchild.name;
-                });
-              }))
-      .map((child) => {
-        let name;
-        let opts;
+        .concat(Object.keys(this.options_)
+          .filter(function(child) {
+            return !workingChildren.some(function(wchild) {
+              if (typeof wchild === 'string') {
+                return child === wchild;
+              }
+              return child === wchild.name;
+            });
+          }))
+        .map((child) => {
+          let name;
+          let opts;
 
-        if (typeof child === 'string') {
-          name = child;
-          opts = children[name] || this.options_[name] || {};
-        } else {
-          name = child.name;
-          opts = child;
-        }
+          if (typeof child === 'string') {
+            name = child;
+            opts = children[name] || this.options_[name] || {};
+          } else {
+            name = child.name;
+            opts = child;
+          }
 
-        return {name, opts};
-      })
-      .filter((child) => {
+          return {name, opts};
+        })
+        .filter((child) => {
         // we have to make sure that child.name isn't in the techOrder since
         // techs are registerd as Components but can't aren't compatible
         // See https://github.com/videojs/video.js/issues/2772
-        const c = Component.getComponent(child.opts.componentClass ||
+          const c = Component.getComponent(child.opts.componentClass ||
                                        toTitleCase(child.name));
 
-        return c && !Tech.isTech(c);
-      })
-      .forEach(handleAdd);
+          return c && !Tech.isTech(c);
+        })
+        .forEach(handleAdd);
     }
   }
 
@@ -598,18 +604,21 @@ class Component {
    *         Returns itself; method can be chained.
    */
   ready(fn, sync = false) {
-    if (fn) {
-      if (this.isReady_) {
-        if (sync) {
-          fn.call(this);
-        } else {
-          // Call the function asynchronously by default for consistency
-          this.setTimeout(fn, 1);
-        }
-      } else {
-        this.readyQueue_ = this.readyQueue_ || [];
-        this.readyQueue_.push(fn);
-      }
+    if (!fn) {
+      return;
+    }
+
+    if (!this.isReady_) {
+      this.readyQueue_ = this.readyQueue_ || [];
+      this.readyQueue_.push(fn);
+      return;
+    }
+
+    if (sync) {
+      fn.call(this);
+    } else {
+      // Call the function asynchronously by default for consistency
+      this.setTimeout(fn, 1);
     }
   }
 
@@ -621,7 +630,7 @@ class Component {
   triggerReady() {
     this.isReady_ = true;
 
-    // Ensure ready is triggerd asynchronously
+    // Ensure ready is triggered asynchronously
     this.setTimeout(function() {
       const readyQueue = this.readyQueue_;
 
@@ -951,8 +960,9 @@ class Component {
   }
 
   /**
-   * Get the width or the height of the `Component` elements computed style. Uses
-   * `window.getComputedStyle`.
+   * Get the computed width or the height of the component's element.
+   *
+   * Uses `window.getComputedStyle`.
    *
    * @param {string} widthOrHeight
    *        A string containing 'width' or 'height'. Whichever one you want to get.
@@ -979,7 +989,7 @@ class Component {
 
     // if the computed value is still 0, it's possible that the browser is lying
     // and we want to check the offset values.
-    // This code also runs on IE8 and wherever getComputedStyle doesn't exist.
+    // This code also runs wherever getComputedStyle doesn't exist.
     if (computedWidthOrHeight === 0) {
       const rule = `offset${toTitleCase(widthOrHeight)}`;
 
@@ -1003,11 +1013,13 @@ class Component {
    */
 
   /**
-   * Get an object that contains width and height values of the `Component`s
-   * computed style.
+   * Get an object that contains computed width and height values of the
+   * component's element.
+   *
+   * Uses `window.getComputedStyle`.
    *
    * @return {Component~DimensionObject}
-   *         The dimensions of the components element
+   *         The computed dimensions of the component's element.
    */
   currentDimensions() {
     return {
@@ -1017,20 +1029,24 @@ class Component {
   }
 
   /**
-   * Get the width of the `Component`s computed style. Uses `window.getComputedStyle`.
+   * Get the computed width of the component's element.
    *
-   * @return {number} width
-   *           The width of the `Component`s computed style.
+   * Uses `window.getComputedStyle`.
+   *
+   * @return {number}
+   *         The computed width of the component's element.
    */
   currentWidth() {
     return this.currentDimension('width');
   }
 
   /**
-   * Get the height of the `Component`s computed style. Uses `window.getComputedStyle`.
+   * Get the computed height of the component's element.
    *
-   * @return {number} height
-   *           The height of the `Component`s computed style.
+   * Uses `window.getComputedStyle`.
+   *
+   * @return {number}
+   *         The computed height of the component's element.
    */
   currentHeight() {
     return this.currentDimension('height');
@@ -1217,9 +1233,9 @@ class Component {
    *    {@link Component#dispose} gets called.
    * 2. The function callback will gets turned into a {@link Component~GenericCallback}
    *
-   * > Note: You can use `window.clearTimeout` on the id returned by this function. This
+   * > Note: You can't use `window.clearTimeout` on the id returned by this function. This
    *         will cause its dispose listener not to get cleaned up! Please use
-   *         {@link Component#clearTimeout} or {@link Component#dispose}.
+   *         {@link Component#clearTimeout} or {@link Component#dispose} instead.
    *
    * @param {Component~GenericCallback} fn
    *        The function that will be run after `timeout`.
@@ -1236,12 +1252,18 @@ class Component {
    * @see [Similar to]{@link https://developer.mozilla.org/en-US/docs/Web/API/WindowTimers/setTimeout}
    */
   setTimeout(fn, timeout) {
+    // declare as variables so they are properly available in timeout function
+    // eslint-disable-next-line
+    var timeoutId, disposeFn;
+
     fn = Fn.bind(this, fn);
 
-    const timeoutId = window.setTimeout(fn, timeout);
-    const disposeFn = function() {
-      this.clearTimeout(timeoutId);
-    };
+    timeoutId = window.setTimeout(() => {
+      this.off('dispose', disposeFn);
+      fn();
+    }, timeout);
+
+    disposeFn = () => this.clearTimeout(timeoutId);
 
     disposeFn.guid = `vjs-timeout-${timeoutId}`;
 
@@ -1302,9 +1324,7 @@ class Component {
 
     const intervalId = window.setInterval(fn, interval);
 
-    const disposeFn = function() {
-      this.clearInterval(intervalId);
-    };
+    const disposeFn = () => this.clearInterval(intervalId);
 
     disposeFn.guid = `vjs-interval-${intervalId}`;
 
@@ -1366,11 +1386,19 @@ class Component {
    * @see [Similar to]{@link https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame}
    */
   requestAnimationFrame(fn) {
+    // declare as variables so they are properly available in rAF function
+    // eslint-disable-next-line
+    var id, disposeFn;
+
     if (this.supportsRaf_) {
       fn = Fn.bind(this, fn);
 
-      const id = window.requestAnimationFrame(fn);
-      const disposeFn = () => this.cancelAnimationFrame(id);
+      id = window.requestAnimationFrame(() => {
+        this.off('dispose', disposeFn);
+        fn();
+      });
+
+      disposeFn = () => this.cancelAnimationFrame(id);
 
       disposeFn.guid = `vjs-raf-${id}`;
       this.on('dispose', disposeFn);

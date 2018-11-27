@@ -1,6 +1,7 @@
 /* eslint-env qunit */
 import videojs from '../../src/js/video.js';
 import document from 'global/document';
+import sinon from 'sinon';
 import log from '../../src/js/utils/log.js';
 
 QUnit.module('video.js:hooks ', {
@@ -23,9 +24,7 @@ QUnit.test('should be able to add a hook', function(assert) {
   assert.equal(videojs.hooks_.bar.length, 2, 'should have 2 bar hooks');
   assert.equal(videojs.hooks_.foo.length, 1, 'should have 1 foo hook');
 
-  videojs.hook('foo', function() {});
-  videojs.hook('foo', function() {});
-  videojs.hook('foo', function() {});
+  videojs.hook('foo', [function() {}, function() {}, function() {}]);
   assert.equal(videojs.hooks_.foo.length, 4, 'should have 4 foo hooks');
   assert.equal(videojs.hooks_.bar.length, 2, 'should have 2 bar hooks');
 });
@@ -104,6 +103,37 @@ QUnit.test('should be get all hooks for a type and add at the same time', functi
   assert.deepEqual(videojs.hooks_.bar, barHooks, 'should return the exact bar list from videojs.hooks_');
 });
 
+QUnit.test('should be able to add a hook that runs once', function(assert) {
+  const spies = [
+    sinon.spy(),
+    sinon.spy(),
+    sinon.spy()
+  ];
+
+  videojs.hookOnce('foo', spies);
+
+  assert.equal(videojs.hooks_.foo.length, 3, 'should have 3 foo hooks');
+
+  videojs.hooks('foo').forEach(fn => fn());
+
+  spies.forEach((spy, i) => {
+    assert.ok(spy.calledOnce, `spy #${i + 1} was called`);
+  });
+
+  assert.equal(videojs.hooks_.foo.length, 0, 'should have 0 foo hooks');
+});
+
+QUnit.test('hooks registered using hookOnce should return the original callback return value', function(assert) {
+  let result;
+
+  videojs.hookOnce('foo', () => 'ok');
+  videojs.hooks('foo').forEach(fn => {
+    result = fn();
+  });
+
+  assert.equal(result, 'ok', 'the hookOnce callback returned "ok"');
+});
+
 QUnit.test('should trigger beforesetup and setup during videojs setup', function(assert) {
   const vjsOptions = {techOrder: ['techFaker']};
   let setupCalled = false;
@@ -122,8 +152,10 @@ QUnit.test('should trigger beforesetup and setup during videojs setup', function
     assert.equal(beforeSetupCalled, true, 'beforesetup should have been called already');
     assert.ok(player, 'created player from tag');
     assert.ok(player.id() === 'test_vid_id');
-    assert.ok(videojs.getPlayers().test_vid_id === player,
-              'added player to global reference');
+    assert.ok(
+      videojs.getPlayers().test_vid_id === player,
+      'added player to global reference'
+    );
   };
 
   const fixture = document.getElementById('qunit-fixture');
